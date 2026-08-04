@@ -57,7 +57,11 @@ async function postAction(action) {
     body: JSON.stringify({ action: action.type, payload: action.payload }),
   });
   const json = await res.json();
-  if (json.status !== 'ok') throw new Error(json.message || 'Erreur serveur');
+  if (json.status !== 'ok') {
+    const err = new Error(json.message || 'Erreur serveur');
+    err.rejected = true; // le serveur a traité la requête et l'a refusée : inutile de réessayer
+    throw err;
+  }
 }
 
 let flushing = false;
@@ -69,9 +73,21 @@ async function flushQueue() {
   setSyncState('syncing');
   try {
     while (queue.length > 0) {
-      await postAction(queue[0]);
-      queue.shift();
-      saveQueue();
+      try {
+        await postAction(queue[0]);
+        queue.shift();
+        saveQueue();
+      } catch (e) {
+        if (e.rejected) {
+          // Action définitivement refusée (ex. droit capitaine) : on l'abandonne pour ne pas bloquer la file.
+          console.warn('Action refusée, abandonnée :', e.message);
+          toast('⚠️ ' + e.message);
+          queue.shift();
+          saveQueue();
+          continue;
+        }
+        throw e; // erreur réseau : on garde l'action en file et on réessaiera plus tard
+      }
     }
     setSyncState('synced');
     await pullFromCloud(true);
