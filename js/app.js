@@ -388,9 +388,10 @@ function renderClassement() {
     container.innerHTML = `<div class="settings-content"><p class="hint">Aucun classement pour l'instant — colle le tableau depuis le site officiel dans un onglet nommé exactement <b>Classement général</b> du Google Sheet.</p></div>`;
     return;
   }
-  let html = '<div style="overflow-x:auto"><table class="dispo-grid-table">';
-  rows.forEach((row, i) => {
-    html += '<tr>' + row.map(cell => `<td class="${i === 0 ? 'name' : ''}">${escHtml(cell)}</td>`).join('') + '</tr>';
+  const isNumeric = v => /^-?[\d\s]+([.,]\d+)?%?$/.test(String(v).trim()) && String(v).trim() !== '';
+  let html = '<div style="overflow-x:auto"><table class="dispo-grid-table classement-table">';
+  rows.forEach(row => {
+    html += '<tr>' + row.map(cell => `<td class="${isNumeric(cell) ? 'num' : 'name'}">${escHtml(cell)}</td>`).join('') + '</tr>';
   });
   html += '</table></div>';
   container.innerHTML = html;
