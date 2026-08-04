@@ -45,6 +45,7 @@ function defaultData() {
     rotations: [],
     matchs: [],
     disponibilites: [],
+    classement: [],
   };
 }
 

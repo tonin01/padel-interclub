@@ -39,6 +39,7 @@ function renderCurrentView() {
   else if (currentView === 'detail') renderDetail(currentDetailJournee);
   else if (currentView === 'dispos') renderDispos();
   else if (currentView === 'equipe') renderEquipe();
+  else if (currentView === 'classement') renderClassement();
   else if (currentView === 'reglages') renderReglages();
 }
 
@@ -377,6 +378,22 @@ function renderEquipe() {
     </div>`;
   });
   document.getElementById('equipe-body').innerHTML = html || '<p class="hint">Aucun joueur.</p>';
+}
+
+// ── VUE CLASSEMENT ───────────────────────────────────────────
+function renderClassement() {
+  const rows = Array.isArray(data.classement) ? data.classement : [];
+  const container = document.getElementById('classement-body');
+  if (rows.length === 0) {
+    container.innerHTML = `<div class="settings-content"><p class="hint">Aucun classement pour l'instant — colle le tableau depuis le site officiel dans un onglet nommé exactement <b>Classement général</b> du Google Sheet.</p></div>`;
+    return;
+  }
+  let html = '<div style="overflow-x:auto"><table class="dispo-grid-table">';
+  rows.forEach((row, i) => {
+    html += '<tr>' + row.map(cell => `<td class="${i === 0 ? 'name' : ''}">${escHtml(cell)}</td>`).join('') + '</tr>';
+  });
+  html += '</table></div>';
+  container.innerHTML = html;
 }
 
 // ── VUE RÉGLAGES ─────────────────────────────────────────────

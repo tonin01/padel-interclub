@@ -12,6 +12,9 @@ const SHEETS = {
     name: 'Journées',
     headers: ['N° journée', 'Date', 'Heure', 'Club / Adresse', 'Statut'],
     key: ['N° journée'],
+    // Sur cet onglet, "N° journée" est l'identifiant propre de la ligne (numero),
+    // alors que sur les autres onglets c'est une référence vers une journée (journee).
+    fieldOverrides: { 'N° journée': 'numero' },
   },
   rotations: {
     name: 'Rotations',
@@ -97,13 +100,16 @@ function sheetToObjects_(key) {
     .filter(row => row.some(c => c !== '' && c !== null))
     .map(row => {
       const obj = {};
-      headers.forEach((h, i) => { obj[headerToField_(h)] = row[i]; });
+      headers.forEach((h, i) => { obj[headerToField_(h, cfg)] = row[i]; });
       return obj;
     });
 }
 
-// Convertit un en-tête FR en clé JS courte utilisée par le frontend
-function headerToField_(header) {
+// Convertit un en-tête FR en clé JS courte utilisée par le frontend.
+// `cfg` permet à un onglet de redéfinir le mapping pour une colonne donnée
+// (ex. "N° journée" est l'identifiant propre de l'onglet Journées, une référence ailleurs).
+function headerToField_(header, cfg) {
+  if (cfg && cfg.fieldOverrides && cfg.fieldOverrides[header]) return cfg.fieldOverrides[header];
   const map = {
     'Nom': 'nom',
     'Niveau': 'niveau',
@@ -134,7 +140,7 @@ function headerToField_(header) {
 
 function fieldToHeader_(key, field) {
   const cfg = SHEETS[key];
-  return cfg.headers.find(h => headerToField_(h) === field);
+  return cfg.headers.find(h => headerToField_(h, cfg) === field);
 }
 
 // Met à jour la ligne correspondant aux colonnes-clé, ou l'ajoute si absente.
@@ -146,7 +152,7 @@ function upsertRow_(key, rowObj) {
   const keyCols = cfg.key.map(h => headers.indexOf(h));
 
   const rowValues = headers.map(h => {
-    const field = headerToField_(h);
+    const field = headerToField_(h, cfg);
     const v = rowObj[field];
     if (Array.isArray(v)) return v.join(' / ');
     return v === undefined ? '' : v;
@@ -162,6 +168,15 @@ function upsertRow_(key, rowObj) {
   sheet.appendRow(rowValues);
 }
 
+// Onglet libre, alimenté à la main par copié-collé (ex. depuis le site du tournoi).
+// Pas de colonnes fixes : on renvoie le tableau brut tel quel, sans mapping.
+const CLASSEMENT_SHEET_NAME = 'Classement général';
+function getRawGrid_(sheetName) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  if (!sheet) return [];
+  return sheet.getDataRange().getValues().filter(row => row.some(c => c !== '' && c !== null));
+}
+
 // ── ENDPOINTS ─────────────────────────────────────────────────
 function doGet(e) {
   const data = {
@@ -170,6 +185,7 @@ function doGet(e) {
     rotations: sheetToObjects_('rotations'),
     matchs: sheetToObjects_('matchs'),
     disponibilites: sheetToObjects_('disponibilites'),
+    classement: getRawGrid_(CLASSEMENT_SHEET_NAME),
   };
   return jsonOutput_({ status: 'ok', data });
 }
