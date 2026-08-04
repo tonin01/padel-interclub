@@ -467,6 +467,40 @@ function confirmIdentify() {
   renderCurrentView();
 }
 
+// ── DÉTECTION NAVIGATEUR INTÉGRÉ (WhatsApp, Messenger, Instagram…) ──
+function detectInAppBrowserLabel() {
+  const ua = navigator.userAgent || '';
+  const patterns = [
+    { re: /FBAN|FBAV/i, label: 'Facebook' },
+    { re: /Instagram/i, label: 'Instagram' },
+    { re: /WhatsApp/i, label: 'WhatsApp' },
+    { re: /Line\//i, label: 'Line' },
+    { re: /MicroMessenger/i, label: 'WeChat' },
+    { re: /Twitter/i, label: 'Twitter/X' },
+  ];
+  const found = patterns.find(p => p.re.test(ua));
+  return found ? found.label : null;
+}
+
+function isStandaloneApp() {
+  return window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+}
+
+function checkInAppBrowser() {
+  if (isStandaloneApp()) return;
+  const label = detectInAppBrowserLabel();
+  if (!label) return;
+  if (sessionStorage.getItem('inapp_banner_dismissed')) return;
+  document.getElementById('inapp-banner-text').textContent =
+    `⚠️ Tu as ouvert ce lien depuis ${label}. Pour que l'app garde tes réglages, ouvre-le dans Safari (··· → Ouvrir dans Safari) avant de l'ajouter à l'écran d'accueil.`;
+  document.getElementById('inapp-banner').style.display = 'flex';
+}
+
+function dismissInAppBanner() {
+  document.getElementById('inapp-banner').style.display = 'none';
+  sessionStorage.setItem('inapp_banner_dismissed', '1');
+}
+
 // ── SERVICE WORKER ───────────────────────────────────────────
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
@@ -477,6 +511,7 @@ function registerServiceWorker() {
 // ── INIT ─────────────────────────────────────────────────────
 function init() {
   renderCurrentView();
+  checkInAppBrowser();
   if (!currentPlayer) openIdentifyModal(false);
   setSyncState(scriptUrl ? 'idle' : 'idle');
   if (scriptUrl) {
