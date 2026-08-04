@@ -99,11 +99,13 @@ function renderDetail(numero) {
   [1, 2].forEach(r => { html += renderRotationCard(j.numero, r); });
 
   container.innerHTML = html;
-  [1, 2].forEach(r => updateRotationSum(j.numero, r));
-  [1, 2].forEach(r => {
-    const rot = data.rotations.find(x => Number(x.journee) === Number(j.numero) && Number(x.rotation) === r);
-    if (rot) { [1, 2].forEach(m => updateMatchResultPreview(j.numero, r, m)); }
-  });
+  if (isCapitaine()) {
+    [1, 2].forEach(r => updateRotationSum(j.numero, r));
+    [1, 2].forEach(r => {
+      const rot = data.rotations.find(x => Number(x.journee) === Number(j.numero) && Number(x.rotation) === r);
+      if (rot) { [1, 2].forEach(m => updateMatchResultPreview(j.numero, r, m)); }
+    });
+  }
 }
 
 function playerOptionsHtml(selectedNom) {
@@ -117,19 +119,21 @@ function playerOptionsHtml(selectedNom) {
 
 function renderRotationCard(journee, rotation) {
   const rot = data.rotations.find(x => Number(x.journee) === Number(journee) && Number(x.rotation) === rotation);
-  const slots = ['joueur1', 'joueur2', 'joueur3', 'joueur4'];
-  let selectsHtml = '';
-  slots.forEach((slot, i) => {
-    const val = rot ? rot[slot] : '';
-    selectsHtml += `<div class="player-select-row">
-      <select id="rot-${journee}-${rotation}-p${i + 1}" onchange="updateRotationSum(${journee},${rotation})">${playerOptionsHtml(val)}</select>
-    </div>`;
-  });
 
   let html = `<div class="section">
     <div class="section-header"><span class="section-title">Rotation ${rotation}</span></div>
-    <div class="section-body">
-      <div class="rotation-players">${selectsHtml}</div>
+    <div class="section-body">`;
+
+  if (isCapitaine()) {
+    const slots = ['joueur1', 'joueur2', 'joueur3', 'joueur4'];
+    let selectsHtml = '';
+    slots.forEach((slot, i) => {
+      const val = rot ? rot[slot] : '';
+      selectsHtml += `<div class="player-select-row">
+        <select id="rot-${journee}-${rotation}-p${i + 1}" onchange="updateRotationSum(${journee},${rotation})">${playerOptionsHtml(val)}</select>
+      </div>`;
+    });
+    html += `<div class="rotation-players">${selectsHtml}</div>
       <div class="rotation-sum">
         <span>Somme des niveaux</span>
         <span class="val" id="sum-${journee}-${rotation}">0 / 900</span>
@@ -137,10 +141,20 @@ function renderRotationCard(journee, rotation) {
       <div class="rotation-actions">
         <button class="btn-primary" id="save-rot-${journee}-${rotation}" onclick="saveRotation(${journee},${rotation})">Enregistrer la rotation</button>
       </div>`;
+  } else if (rot) {
+    const players = [rot.joueur1, rot.joueur2, rot.joueur3, rot.joueur4];
+    html += `<div class="rotation-players">` + players.map(nom => {
+      const j = joueurByNom(nom);
+      return `<div class="player-row"><span class="name">${escHtml(nom)}</span><span class="meta">${j ? escHtml(j.niveau) + ' · ' + escHtml(j.cote) : ''}</span></div>`;
+    }).join('') + `</div>
+      <div class="rotation-sum"><span>Somme des niveaux</span><span class="val ok">${rotationSum(players)} / 900</span></div>`;
+  } else {
+    html += `<div class="rotation-players"><p class="hint">Composition à venir — gérée par le capitaine (${escHtml(CAPITAINE)}).</p></div>`;
+  }
 
   if (rot) {
     [1, 2].forEach(m => { html += renderMatchBlock(journee, rotation, m, rot); });
-  } else {
+  } else if (isCapitaine()) {
     html += `<div class="match-block"><p class="hint">Compose et enregistre la rotation ci-dessus pour saisir les matchs.</p></div>`;
   }
 
@@ -163,6 +177,7 @@ function updateRotationSum(journee, rotation) {
 }
 
 function saveRotation(journee, rotation) {
+  if (!isCapitaine()) { toast('Seul le capitaine peut composer les rotations'); return; }
   const ids = [1, 2, 3, 4].map(i => `rot-${journee}-${rotation}-p${i}`);
   const values = ids.map(id => document.getElementById(id).value);
   if (values.some(v => !v)) { toast('Choisis 4 joueurs'); return; }
@@ -173,6 +188,7 @@ function saveRotation(journee, rotation) {
     journee, rotation,
     joueur1: values[0], joueur2: values[1], joueur3: values[2], joueur4: values[3],
     sommeNiveaux: sum,
+    actionBy: currentPlayer,
   });
   toast('✓ Rotation enregistrée');
   renderDetail(journee);
@@ -182,6 +198,20 @@ function renderMatchBlock(journee, rotation, matchNum, rot) {
   const existing = data.matchs.find(m => Number(m.journee) === Number(journee) && Number(m.rotation) === Number(rotation) && Number(m.match) === Number(matchNum));
   const players = [rot.joueur1, rot.joueur2, rot.joueur3, rot.joueur4];
   const paireA = existing ? (Array.isArray(existing.paireA) ? existing.paireA : String(existing.paireA || '').split(' / ')) : [];
+
+  if (!isCapitaine()) {
+    if (!existing) {
+      return `<div class="match-block"><div class="match-title">Match ${matchNum}</div><p class="hint">Score pas encore saisi.</p></div>`;
+    }
+    const sets = [existing.set1, existing.set2, existing.set3].filter(Boolean).join(' · ');
+    return `<div class="match-block">
+      <div class="match-title">Match ${matchNum}</div>
+      <p class="hint">Notre paire : <b>${escHtml(paireA.join(' / '))}</b></p>
+      <p class="hint">Paire adverse : ${escHtml(existing.paireB || '—')}</p>
+      <p class="hint">Sets : ${escHtml(sets || '—')}</p>
+      <div class="match-result">${escHtml(existing.resultat || '')}</div>
+    </div>`;
+  }
 
   let chipsHtml = '';
   players.forEach(nom => {
@@ -230,6 +260,7 @@ function updateMatchResultPreview(journee, rotation, matchNum) {
 }
 
 function saveMatch(journee, rotation, matchNum) {
+  if (!isCapitaine()) { toast('Seul le capitaine peut saisir les scores'); return; }
   const chips = document.querySelectorAll(`#chips-${journee}-${rotation}-${matchNum} .chip.selected`);
   if (chips.length !== 2) { toast('Choisis 2 joueurs pour notre paire'); return; }
   const paireA = Array.from(chips).map(c => c.dataset.nom);
@@ -238,7 +269,7 @@ function saveMatch(journee, rotation, matchNum) {
   const set2 = document.getElementById(`set2-${journee}-${rotation}-${matchNum}`).value.trim();
   const set3 = document.getElementById(`set3-${journee}-${rotation}-${matchNum}`).value.trim();
   const resultat = computeMatchResult(set1, set2, set3);
-  enqueue('setMatch', { journee, rotation, match: matchNum, paireA, paireB, set1, set2, set3, resultat });
+  enqueue('setMatch', { journee, rotation, match: matchNum, paireA, paireB, set1, set2, set3, resultat, actionBy: currentPlayer });
   toast('✓ Match enregistré');
   renderDetail(journee);
 }

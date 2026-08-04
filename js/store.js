@@ -6,6 +6,12 @@ const PLAYER_KEY = 'padel_player';
 
 const COTES = ['Droite', 'Gauche', 'Indifférent'];
 
+// Seul ce joueur peut composer les rotations et saisir les scores.
+const CAPITAINE = "Bourdeaud'hui Anthony";
+function isCapitaine() {
+  return currentPlayer === CAPITAINE;
+}
+
 // ── SEED DATA ────────────────────────────────────────────────
 // Doit rester identique aux données écrites par initializeSheets() dans apps-script/Code.gs
 function seedJoueurs() {

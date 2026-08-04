@@ -1,3 +1,6 @@
+// Seul ce joueur est autorisé à modifier les rotations et les matchs.
+const CAPITAINE = "Bourdeaud'hui Anthony";
+
 // ── CONFIGURATION DES ONGLETS ────────────────────────────────
 const SHEETS = {
   joueurs: {
@@ -35,6 +38,9 @@ function initializeSheets() {
     let sheet = ss.getSheetByName(cfg.name);
     if (!sheet) sheet = ss.insertSheet(cfg.name);
     sheet.clear();
+    // Format en texte brut pour empêcher Google Sheets de convertir automatiquement
+    // des valeurs comme "Dimanche 30 août 2026" ou "6-3" en dates.
+    sheet.getRange(1, 1, 1000, cfg.headers.length).setNumberFormat('@');
     sheet.getRange(1, 1, 1, cfg.headers.length).setValues([cfg.headers]);
     sheet.setFrozenRows(1);
   });
@@ -194,8 +200,10 @@ function doPost(e) {
       }
       if (!found) throw new Error('Joueur introuvable : ' + p.joueur);
     } else if (action === 'setRotation') {
+      if (p.actionBy !== CAPITAINE) throw new Error('Seul le capitaine peut modifier les rotations.');
       upsertRow_('rotations', p);
     } else if (action === 'setMatch') {
+      if (p.actionBy !== CAPITAINE) throw new Error('Seul le capitaine peut modifier les matchs.');
       upsertRow_('matchs', p);
     } else {
       throw new Error('Action inconnue : ' + action);
