@@ -384,7 +384,44 @@ function renderEquipe() {
 }
 
 // ── VUE CLASSEMENT ───────────────────────────────────────────
+function renderBilan() {
+  const container = document.getElementById('bilan-body');
+  const matchs = data.matchs.filter(m => m.resultat && m.resultat.indexOf('Victoire') === 0);
+  if (!matchs.length) {
+    container.innerHTML = '<p class="hint">Aucun score saisi pour l\'instant.</p>';
+    return;
+  }
+
+  let setsNous = 0, setsAdv = 0;
+  const parJournee = {};
+  matchs.forEach(m => {
+    const gagne = m.resultat.indexOf('Victoire A') === 0;
+    [m.set1, m.set2, m.set3].forEach(s => {
+      const w = setWinner(parseSet(s));
+      if (w === 'A') setsNous++; else if (w === 'B') setsAdv++;
+    });
+    const jn = Number(m.journee);
+    if (!parJournee[jn]) parJournee[jn] = { joues: 0, gagnes: 0 };
+    parJournee[jn].joues++;
+    if (gagne) parJournee[jn].gagnes++;
+  });
+  const totalGagnes = matchs.filter(m => m.resultat.indexOf('Victoire A') === 0).length;
+
+  let html = `<div class="bilan-total">
+    <div class="bilan-stat"><span class="val">${totalGagnes}/${matchs.length}</span><span class="label">Matchs gagnés</span></div>
+    <div class="bilan-stat"><span class="val">${setsNous}-${setsAdv}</span><span class="label">Sets (nous-adversaires)</span></div>
+  </div>`;
+  html += '<table class="dispo-grid-table"><thead><tr><th class="name">Journée</th><th>Matchs gagnés</th></tr></thead><tbody>';
+  Object.keys(parJournee).map(Number).sort((a, b) => a - b).forEach(jn => {
+    const st = parJournee[jn];
+    html += `<tr><td class="name">Journée ${jn}</td><td>${st.gagnes}/${st.joues}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
 function renderClassement() {
+  renderBilan();
   const rows = Array.isArray(data.classement) ? data.classement : [];
   const container = document.getElementById('classement-body');
   if (rows.length === 0) {
