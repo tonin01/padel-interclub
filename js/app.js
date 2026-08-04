@@ -278,6 +278,13 @@ function saveMatch(journee, rotation, matchNum) {
 function handleAdresseClick(el) {
   const adresse = el.dataset.adresse;
   if (!adresse) return;
+  // Sur mobile, l'API Partager ouvre le sélecteur natif du téléphone
+  // (Google Maps, Waze, Plans, etc. — toutes les apps installées).
+  if (navigator.share) {
+    const mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(adresse);
+    navigator.share({ title: 'Aller au club', text: adresse, url: mapsUrl }).catch(() => {});
+    return;
+  }
   openNavModal(adresse);
 }
 function openNavModal(adresse) {
