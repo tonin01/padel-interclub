@@ -124,6 +124,9 @@ label{display:block;font-size:12px;color:var(--text-muted);text-transform:upperc
 .player-row .name{font-weight:700}
 .player-row .meta{font-size:12px;color:var(--text-muted)}
 
+/* BADGE CAPITAINE */
+.captain-badge{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;margin-left:6px;border-radius:50%;background:var(--lime);color:var(--court);font-size:10px;font-weight:800;line-height:1;vertical-align:middle}
+
 /* SETTINGS */
 .settings-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin:12px;overflow:hidden}
 .settings-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--court);padding:11px 14px;border-bottom:1px solid var(--border);background:var(--bg)}

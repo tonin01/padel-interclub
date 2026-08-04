@@ -9,6 +9,9 @@ function escHtml(s) {
 function escAttr(s) {
   return escHtml(s).replace(/"/g, '&quot;');
 }
+function nameWithCaptainBadge(nom) {
+  return escHtml(nom) + (nom === CAPITAINE ? ' <span class="captain-badge">C</span>' : '');
+}
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -146,7 +149,7 @@ function renderRotationCard(journee, rotation) {
     const players = [rot.joueur1, rot.joueur2, rot.joueur3, rot.joueur4];
     html += `<div class="rotation-players">` + players.map(nom => {
       const j = joueurByNom(nom);
-      return `<div class="player-row"><span class="name">${escHtml(nom)}</span><span class="meta">${j ? escHtml(j.niveau) + ' · ' + escHtml(j.cote) : ''}</span></div>`;
+      return `<div class="player-row"><span class="name">${nameWithCaptainBadge(nom)}</span><span class="meta">${j ? escHtml(j.niveau) + ' · ' + escHtml(j.cote) : ''}</span></div>`;
     }).join('') + `</div>
       <div class="rotation-sum"><span>Somme des niveaux</span><span class="val ok">${rotationSum(players)} / 900</span></div>`;
   } else {
@@ -354,7 +357,7 @@ function renderDisposGrid() {
   journees.forEach(j => { html += `<th>J${j.numero}</th>`; });
   html += '</tr></thead><tbody>';
   data.joueurs.forEach(p => {
-    html += `<tr><td class="name">${escHtml(p.nom)}</td>`;
+    html += `<tr><td class="name">${nameWithCaptainBadge(p.nom)}</td>`;
     journees.forEach(j => {
       const d = dispoFor(p.nom, j.numero);
       let cell = '<span class="dot-unk">–</span>';
@@ -373,7 +376,7 @@ function renderEquipe() {
   let html = '';
   data.joueurs.forEach(p => {
     html += `<div class="player-row">
-      <span class="name">${escHtml(p.nom)}</span>
+      <span class="name">${nameWithCaptainBadge(p.nom)}</span>
       <span class="meta">${escHtml(p.niveau)} · ${escHtml(p.cote)}</span>
     </div>`;
   });
