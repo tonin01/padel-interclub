@@ -1,4 +1,4 @@
-const CACHE_NAME = 'padel-interclub-v2';
+const CACHE_NAME = 'padel-interclub-v3';
 const APP_SHELL = [
   './',
   './index.html',
@@ -13,8 +13,9 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', event => {
+  const requests = APP_SHELL.map(url => new Request(url, { cache: 'reload' }));
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(cache => cache.addAll(requests)).then(() => self.skipWaiting())
   );
 });
 
@@ -37,10 +38,11 @@ self.addEventListener('fetch', event => {
 
   if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
 
-  // Réseau en priorité pour toujours servir la dernière version déployée ;
-  // le cache ne sert que de secours hors-ligne.
+  // Réseau en priorité, en ignorant le cache HTTP du navigateur (GitHub Pages
+  // met les fichiers en cache 10 min côté navigateur) pour toujours servir
+  // la dernière version déployée. Le cache local ne sert que de secours hors-ligne.
   event.respondWith(
-    fetch(event.request).then(res => {
+    fetch(event.request, { cache: 'no-store' }).then(res => {
       const copy = res.clone();
       caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
       return res;
