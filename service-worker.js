@@ -1,4 +1,4 @@
-const CACHE_NAME = 'padel-interclub-v3';
+const CACHE_NAME = 'padel-interclub-v4';
 const APP_SHELL = [
   './',
   './index.html',

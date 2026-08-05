@@ -1,4 +1,7 @@
 // ── STATE ────────────────────────────────────────────────────
+// À incrémenter à chaque déploiement — permet de vérifier depuis Réglages
+// qu'un appareil a bien reçu la dernière version (cf. CACHE_NAME dans service-worker.js).
+const APP_VERSION = '2026-08-05.1';
 let currentView = 'journees';
 let currentDetailJournee = null;
 
@@ -441,6 +444,7 @@ function renderClassement() {
 function renderReglages() {
   document.getElementById('reglages-joueur').textContent = currentPlayer || 'Non identifié';
   document.getElementById('script-url-input').value = scriptUrl;
+  document.getElementById('app-version').textContent = APP_VERSION;
   setSyncState(syncState);
 }
 
