@@ -491,8 +491,10 @@ function checkInAppBrowser() {
   const label = detectInAppBrowserLabel();
   if (!label) return;
   if (sessionStorage.getItem('inapp_banner_dismissed')) return;
+  const isIOS = /iP(hone|od|iPad)/.test(navigator.userAgent);
+  const navigateurs = isIOS ? 'Safari' : 'Chrome';
   document.getElementById('inapp-banner-text').textContent =
-    `⚠️ Tu as ouvert ce lien depuis ${label}. Pour que l'app garde tes réglages, ouvre-le dans Safari (··· → Ouvrir dans Safari) avant de l'ajouter à l'écran d'accueil.`;
+    `⚠️ Tu as ouvert ce lien depuis ${label}. Pour que l'app garde tes réglages, ouvre-le dans ton navigateur (${navigateurs}, via "Ouvrir dans le navigateur" ou "···") avant de l'ajouter à l'écran d'accueil.`;
   document.getElementById('inapp-banner').style.display = 'flex';
 }
 
@@ -515,7 +517,7 @@ function init() {
   if (!currentPlayer) openIdentifyModal(false);
   setSyncState(scriptUrl ? 'idle' : 'idle');
   if (scriptUrl) {
-    setTimeout(() => pullFromCloud(true), 800);
+    setTimeout(() => { flushQueue(); pullFromCloud(true); }, 800);
     startSyncLoop();
   }
   registerServiceWorker();

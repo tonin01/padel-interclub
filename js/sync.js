@@ -123,6 +123,11 @@ async function pullFromCloud(silent = false) {
   }
 }
 
+async function manualSync() {
+  await flushQueue();
+  await pullFromCloud();
+}
+
 function saveScriptUrl(url) {
   scriptUrl = url.trim();
   localStorage.setItem(URL_KEY, scriptUrl);
